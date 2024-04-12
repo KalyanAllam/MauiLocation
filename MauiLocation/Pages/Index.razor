@@ -1,0 +1,100 @@
+﻿@using Newtonsoft
+
+
+@page "/"
+
+ 
+
+<p role="status">Latitude: @lat</p>
+<p role="status">Longitude: @lon</p>
+<p role="status">Altitude: @altitude</p>
+<p>Meters</p>
+<p role="status">PostalCode: @postalcode</p>
+
+
+<button class="btn btn-primary" @onclick="Location">Click me</button>
+
+@code {
+    private CancellationTokenSource _cancelTokenSource;
+    private bool _isCheckingLocation;
+    public double latitude, longitude ;
+    public double lat,lon;
+    public double altitude; string postalcode; string address;
+    private void Location()
+    {
+        GetCurrentLocation();
+    }
+
+
+
+
+
+    public async Task GetCurrentLocation()
+    {
+        try
+        {
+            _isCheckingLocation = true;
+
+            GeolocationRequest request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+
+            _cancelTokenSource = new CancellationTokenSource();
+
+            Location location = await Geolocation.Default.GetLocationAsync(request, _cancelTokenSource.Token);
+
+            if (location != null)
+            {
+                latitude =  location.Latitude ;
+                longitude =  location.Longitude ;
+
+                lat = Math.Round(latitude, 2);
+                lon = Math.Round(longitude, 2);
+                //     altitude =  Convert.ToDouble(location.Altitude) ;
+                using (HttpClient client = new HttpClient())
+                {
+                    string urlel = $"https://api.open-meteo.com/v1/elevation?latitude={latitude}&longitude={longitude}";
+                    var responseel = client.GetAsync(urlel).Result;
+                    string jsonel = await responseel.Content.ReadAsStringAsync();
+                    dynamic datael = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonel);
+                     altitude = datael.elevation[0];
+                }
+
+                string BingMapsApiKey = "Au7sMtQzyQZRzuQ2krOIbZg8j2MGoHzzOJAmVym6vQjHq_BJ8a1YQGX3iCosFh8u";
+
+
+                using (HttpClient client1 = new HttpClient())
+                {
+                    string url = $"https://dev.virtualearth.net/REST/v1/Locations/{latitude},{longitude}?o=json&key={BingMapsApiKey}";
+                    var response = client1.GetAsync(url).Result;
+
+                    string json = await response.Content.ReadAsStringAsync();
+
+                    // Parse the JSON response to extract the address
+                    dynamic data1 = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+                      postalcode = data1.resourceSets[0].resources[0].address.postalCode;
+                    address = data1.resourceSets[0].resources[0].address.formattedAddress;
+
+                }
+            }
+        //   Console.WriteLine($"Latitude: {location.Latitude}, Longitude: {location.Longitude}, Altitude: {location.Altitude}");
+        }
+        // Catch one of the following exceptions:
+        //   FeatureNotSupportedException
+        //   FeatureNotEnabledException
+        //   PermissionException
+        catch (Exception ex)
+        {
+            // Unable to get location
+        }
+        finally
+        {
+            _isCheckingLocation = false;
+        }
+    }
+
+    public void CancelRequest()
+    {
+        if (_isCheckingLocation && _cancelTokenSource != null && _cancelTokenSource.IsCancellationRequested == false)
+            _cancelTokenSource.Cancel();
+    }
+}
+
