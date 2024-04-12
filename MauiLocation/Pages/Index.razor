@@ -5,11 +5,11 @@
 
  
 
-<p role="status">Latitude: @lat</p>
-<p role="status">Longitude: @lon</p>
+ 
 <p role="status">Altitude: @altitude</p>
 <p>Meters</p>
 <p role="status">PostalCode: @postalcode</p>
+<p role="status">Locality: @locality</p>
 
 
 <button class="btn btn-primary" @onclick="Location">Click me</button>
@@ -19,7 +19,7 @@
     private bool _isCheckingLocation;
     public double latitude, longitude ;
     public double lat,lon;
-    public double altitude; string postalcode; string address;
+    public double altitude; string postalcode; string locality;
     private void Location()
     {
         GetCurrentLocation();
@@ -71,7 +71,7 @@
                     // Parse the JSON response to extract the address
                     dynamic data1 = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
                       postalcode = data1.resourceSets[0].resources[0].address.postalCode;
-                    address = data1.resourceSets[0].resources[0].address.formattedAddress;
+                   locality = data1.resourceSets[0].resources[0].address.locality;
 
                 }
             }
