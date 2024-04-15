@@ -9,7 +9,14 @@
 <p role="status">Altitude: @altitude</p>
 <p>Meters</p>
 <p role="status">PostalCode: @postalcode</p>
+<p role="status">Address: @address</p>
 <p role="status">Locality: @locality</p>
+
+ 
+
+<p role="status">@tempf  F </p>
+<p role="status">@temperature C</p>
+<p role="status">Weather: @weather</p>
 
 
 <button class="btn btn-primary" @onclick="Location">Click me</button>
@@ -17,9 +24,9 @@
 @code {
     private CancellationTokenSource _cancelTokenSource;
     private bool _isCheckingLocation;
-    public double latitude, longitude ;
+    public double latitude, longitude; string address; string country;
     public double lat,lon;
-    public double altitude; string postalcode; string locality;
+    public double altitude; string postalcode; string locality; string weather; double tempformat; double tempf; double temperature;
     private void Location()
     {
         GetCurrentLocation();
@@ -55,7 +62,10 @@
                     var responseel = client.GetAsync(urlel).Result;
                     string jsonel = await responseel.Content.ReadAsStringAsync();
                     dynamic datael = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonel);
-                     altitude = datael.elevation[0];
+                    altitude = datael.elevation[0];
+
+
+                   
                 }
 
                 string BingMapsApiKey = "Au7sMtQzyQZRzuQ2krOIbZg8j2MGoHzzOJAmVym6vQjHq_BJ8a1YQGX3iCosFh8u";
@@ -70,12 +80,101 @@
 
                     // Parse the JSON response to extract the address
                     dynamic data1 = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-                      postalcode = data1.resourceSets[0].resources[0].address.postalCode;
-                   locality = data1.resourceSets[0].resources[0].address.locality;
+                    postalcode = data1.resourceSets[0].resources[0].address.postalCode;
+                    locality = data1.resourceSets[0].resources[0].address.locality;
+
+
+                    address = data1.resourceSets[0].resources[0].address.formattedAddress;
+                    country = data1.resourceSets[0].resources[0].address.countryRegion;
+
+
+                    if (country == "India")
+                    { address = ""; }
 
                 }
-            }
-        //   Console.WriteLine($"Latitude: {location.Latitude}, Longitude: {location.Longitude}, Altitude: {location.Altitude}");
+
+
+                using (HttpClient client2 = new HttpClient())
+                {
+                    string urlw = $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current_weather=true";
+                    var responsew = client2.GetAsync(urlw).Result;
+                    string jsonw = await responsew.Content.ReadAsStringAsync();
+                    dynamic dataw = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonw);
+                    tempf = (dataw.current_weather.temperature * 1.8) + 32;
+                     tempformat = Math.Round(tempf, 1);
+                  
+
+
+                    //     temperature = dataw.current_weather.temperature;
+
+                    temperature = dataw.current_weather.temperature;
+                    int weathercode = dataw.current_weather.weathercode;
+                  
+                    switch (weathercode)
+                    {
+                        case 0:
+                            weather = "Clear Sky";
+                            break;
+
+
+                        case 1:
+                            weather = "Mainly Clear";
+                            break;
+                        case 2:
+                            weather = " partly cloudy";
+                            break;
+                        case 3:
+                            weather = "overcast";
+                            break;
+                        case 51:
+                            weather = "Rain  Slight";
+                            break;
+                        case 53:
+                            weather = "Rain moderate";
+                            break;
+                        case 55:
+                            weather = "Rain heaving intensity";
+                            break;
+                        case 71:
+                            weather = "Snowfall  Slight";
+                            break;
+                        case 73:
+                            weather = "Snowfall moderate";
+                            break;
+                        case 75:
+                            weather = "Snowfall heaving intensity";
+                            break;
+
+                        case 80:
+                            weather = "Rain showers slight";
+                            break;
+
+
+                        case 81:
+                            weather = "Rain showers moderate";
+                            break;
+                        case 82:
+                            weather = " Rain showers violent";
+                            break;
+
+                        case 85:
+                            weather = "Snow showers slight";
+                            break;
+                        case 86:
+                            weather = " Snow showers heavy";
+                            break;
+                        case 95:
+                            weather = " Thunderstorm: Slight or moderate";
+                            break;
+
+                        default:
+                            weather = " ";
+                            break;
+                    }
+ 
+                }
+                }
+                //   Console.WriteLine($"Latitude: {location.Latitude}, Longitude: {location.Longitude}, Altitude: {location.Altitude}");
         }
         // Catch one of the following exceptions:
         //   FeatureNotSupportedException
